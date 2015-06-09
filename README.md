@@ -29,7 +29,7 @@ Example:
 ``` c++
 _pathFinder = pathfinding::PathFinding::create();
 _pathFinder->retain();
-_pathFinder->setupMap(_staticCollisionMap);
+_pathFinder->setupMap(matrix);
 ```
 
 3. Find the path:
@@ -37,7 +37,7 @@ Example:
 ``` c++
 Vec2 beginCoord = Vec2(1,1);
 Vec2 endCoord = Vec2(3,3);
-auto path = _pathFinder->getShortestPath(beginCoord, endCoord);
+std::vector<Vec2> path = _pathFinder->getShortestPath(beginCoord, endCoord);
 ```
 
 4. In PathFinding.cpp, you can enable debug print 
