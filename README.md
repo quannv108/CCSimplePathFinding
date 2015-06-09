@@ -8,7 +8,7 @@ http://en.wikipedia.org/wiki/A*_search_algorithm
 http://www.raywenderlich.com/4970/how-to-implement-a-pathfinding-with-cocos2d-tutorial
 
 <h5>How to use:</h5>
-1. Create a 2-dimension matrix world:
+1. Create a 2-dimension matrix world:</br>
 Example:
 ``` c++
 std::vector<std::vector<int>> matrix
@@ -24,7 +24,7 @@ matrix.push_back(row4);
 matrix.push_back(row5);
 ```
 
-2. Init PathFinding 
+2. Init PathFinding </br>
 Example:
 ``` c++
 _pathFinder = pathfinding::PathFinding::create();
@@ -32,7 +32,7 @@ _pathFinder->retain();
 _pathFinder->setupMap(matrix);
 ```
 
-3. Find the path:
+3. Find the path:</br>
 Example: 
 ``` c++
 Vec2 beginCoord = Vec2(1,1);
@@ -40,7 +40,7 @@ Vec2 endCoord = Vec2(3,3);
 std::vector<Vec2> path = _pathFinder->getShortestPath(beginCoord, endCoord);
 ```
 
-4. In PathFinding.cpp, you can enable debug print 
+4. In PathFinding.cpp, you can enable debug print </br>
 change
 ``` c++
 #define DEBUG_PRINT 0
