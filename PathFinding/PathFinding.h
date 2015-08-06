@@ -44,11 +44,13 @@ public:
     
     std::vector<cocos2d::Vec2> getShortestPath(const cocos2d::Vec2& fromCoord,
                                                const cocos2d::Vec2& toCoord);
+    std::vector<cocos2d::Vec2> getShortestPath_DoubleSize(const cocos2d::Vec2& fromCoord,
+                                                          const cocos2d::Vec2& toCoord);
 protected:
     virtual bool init();
     
-    CC_SYNTHESIZE_READONLY_PASS_BY_REF(cocos2d::Vector<ShortestPathStep *>, _openStep, OpenStep);
-    CC_SYNTHESIZE_READONLY_PASS_BY_REF(cocos2d::Vector<ShortestPathStep *>, _closedStep, ClosedStep);
+    CC_SYNTHESIZE_READONLY_PASS_BY_REF(std::vector<ShortestPathStep *>, _openStep, OpenStep);
+    CC_SYNTHESIZE_READONLY_PASS_BY_REF(std::vector<ShortestPathStep *>, _closedStep, ClosedStep);
     CC_SYNTHESIZE_READONLY_PASS_BY_REF(WorldMap, _map, Map);
     CC_SYNTHESIZE_READONLY_PASS_BY_REF(cocos2d::Size, _mapSize, MapSize);
     
@@ -57,8 +59,8 @@ protected:
     int computeCostToMove(ShortestPathStep *fromStep, ShortestPathStep* toStep);
     std::vector<cocos2d::Vec2> getNearbyTileCoord(const cocos2d::Vec2& tileCoord);
     
-    inline cocos2d::Vector<ShortestPathStep *>::iterator
-    getIte(cocos2d::Vector<ShortestPathStep *>& array, ShortestPathStep* step){
+    inline std::vector<ShortestPathStep *>::iterator
+    getIte(std::vector<ShortestPathStep *>& array, ShortestPathStep* step){
         for (auto ite = array.begin(); ite != array.end(); ite ++) {
             if((*ite)->getPosition().equals(step->getPosition())){
                 return ite;
@@ -67,7 +69,7 @@ protected:
         return array.end();
     }
     
-    inline bool contains(cocos2d::Vector<ShortestPathStep *>& array, ShortestPathStep* step){
+    inline bool contains(std::vector<ShortestPathStep *>& array, ShortestPathStep* step){
         return getIte(array, step) != array.end();
     }
 

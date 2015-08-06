@@ -70,7 +70,7 @@ namespace pathfinding{
         }
         
         // Insert the new step at the determined index to preserve the F score ordering
-        _openStep.insert(i, step);
+        _openStep.insert(_openStep.begin() + i, step);
     }
     
     int PathFinding::computeHScore(const cocos2d::Vec2 &fromCoord, const cocos2d::Vec2 &toCoord)
@@ -117,8 +117,12 @@ namespace pathfinding{
         return result;
     }
     
-    std::vector<Vec2> PathFinding::getShortestPath(const cocos2d::Vec2 &fromCoord, const cocos2d::Vec2 &toCoord)
+    std::vector<Vec2> PathFinding::getShortestPath(const cocos2d::Vec2 &fromCoord,
+                                                   const cocos2d::Vec2 &toCoord)
     {
+#if DEBUG_PRINT
+        CCLOG("*** PATH SEARCH BEGIN :");
+#endif
         std::vector<Vec2> result;
         // Check that there is a path to compute ;-)
         if(fromCoord.equals(toCoord)){
@@ -132,19 +136,26 @@ namespace pathfinding{
         }
         
         bool pathFound = false;
+        for (int i = 0; i < _openStep.size(); i ++) {
+            delete _openStep.at(i);
+        }
+        for (int i = 0; i < _closedStep.size(); i ++) {
+            delete _closedStep.at(i);
+        }
         _openStep.clear();
         _closedStep.clear();
         
         // Start by adding the from position to the open list
-        insertToOpenStep(ShortestPathStep::create(fromCoord));
+        auto openStep = new ShortestPathStep(fromCoord);
+        insertToOpenStep(openStep);
         
         do{
             // Get the lowest F cost step
             // Because the list is ordered, the first step is always the one with the lowest F cost
-            ShortestPathStep *currentStep = _openStep.at(0);
+            ShortestPathStep *currentStep = _openStep.front();
             
             // Add the current step to the closed set
-            _closedStep.pushBack(currentStep);
+            _closedStep.push_back(currentStep);
             
             // Remove it from the open list
             // Note that if we wanted to first removing from the open list, care should be taken to the memory
@@ -168,6 +179,12 @@ namespace pathfinding{
                 CCLOG("*** PATH END");
 #endif
                 std::reverse(result.begin(), result.end());
+                for (int i = 0; i < _openStep.size(); i ++) {
+                    delete _openStep.at(i);
+                }
+                for (int i = 0; i < _closedStep.size(); i ++) {
+                    delete _closedStep.at(i);
+                }
                 _openStep.clear();
                 _closedStep.clear();
                 break;
@@ -176,10 +193,167 @@ namespace pathfinding{
             // Get the adjacent tiles coord of the current step
             auto adjSteps = getNearbyTileCoord(currentStep->getPosition());
             for (Vec2 v : adjSteps) {
-                ShortestPathStep *step = ShortestPathStep::create(v);
+                ShortestPathStep *step = new ShortestPathStep(v);
                 
                 // Check if the step isn't already in the closed set
                 if (contains(_closedStep, step)){
+                    delete step;
+                    step = NULL;
+                    continue; // Ignore it
+                }
+                
+                // Compute the cost from the current step to that step
+                int moveCost = computeCostToMove(currentStep, step);
+                
+                // Check if the step is already in the open list
+                auto openIte = getIte(_openStep, step);
+                if (openIte == _openStep.end()) { // Not on the open list, so add it
+
+                    // Set the current step as the parent
+                    step->setParent(currentStep);
+                    
+                    // The G score is equal to the parent G score + the cost to move from the parent to it
+                    step->setGScore(currentStep->getGScore() + moveCost);
+                    
+                    // Compute the H score which is the estimated movement cost to move from that step to the desired tile coordinate
+                    step->setHScore(computeHScore(step->getPosition(), toCoord));
+                    
+                    // Adding it with the function which is preserving the list ordered by F score
+                    insertToOpenStep(step);
+                }
+                else { // Already in the open list
+                    
+                    step = *openIte; // To retrieve the old one (which has its scores already computed ;-)
+                    
+                    // Check to see if the G score for that step is lower if we use the current step to get there
+                    if ((currentStep->getGScore() + moveCost) < step->getGScore()) {
+                        
+                        // The G score is equal to the parent G score + the cost to move from the parent to it
+                        step->setGScore(currentStep->getGScore() + moveCost);
+                        
+                        // Because the G Score has changed, the F score may have changed too
+                        // So to keep the open list ordered we have to remove the step, and re-insert it with
+                        // the insert function which is preserving the list ordered by F score
+                        _openStep.erase(openIte);
+                        
+                        // Re-insert it with the function which is preserving the list ordered by F score
+                        insertToOpenStep(step);
+                    }
+                }
+            }
+        }while (_openStep.size() > 0);
+        
+        return result;
+    }
+    
+    std::vector<Vec2> PathFinding::getShortestPath_DoubleSize(const cocos2d::Vec2 &fromCoord,
+                                                              const cocos2d::Vec2 &toCoord)
+    {
+#if DEBUG_PRINT
+        CCLOG("*** PATH SEARCH BEGIN :");
+#endif
+        std::vector<Vec2> result;
+        // Check that there is a path to compute ;-)
+        if(fromCoord.equals(toCoord)){
+            return result;
+        }
+        
+        // Must check that the desired location is walkable
+        // In our case it's really easy, because only wall are unwalkable
+        if(!isValidCoord(toCoord) || !canMoveAtCoord(toCoord)){
+            return result;
+        }
+        
+        bool pathFound = false;
+        for (int i = 0; i < _openStep.size(); i ++) {
+            delete _openStep.at(i);
+        }
+        for (int i = 0; i < _closedStep.size(); i ++) {
+            delete _closedStep.at(i);
+        }
+        _openStep.clear();
+        _closedStep.clear();
+        
+        // Start by adding the from position to the open list
+        auto openStep = new ShortestPathStep(fromCoord);
+        insertToOpenStep(openStep);
+        
+        do{
+            // Get the lowest F cost step
+            // Because the list is ordered, the first step is always the one with the lowest F cost
+            ShortestPathStep *currentStep = _openStep.front();
+            
+            // Add the current step to the closed set
+            _closedStep.push_back(currentStep);
+            
+            // Remove it from the open list
+            // Note that if we wanted to first removing from the open list, care should be taken to the memory
+            _openStep.erase(_openStep.begin());
+            
+            // If the currentStep is the desired tile coordinate, we are done!
+            if (currentStep->getPosition().equals(toCoord)){
+                pathFound = true;
+                ShortestPathStep *tmpStep = currentStep;
+#if DEBUG_PRINT
+                CCLOG("*** PATH FOUND :");
+#endif
+                do {
+#if DEBUG_PRINT
+                    CCLOG("%.0f %.0f", tmpStep->getPosition().x, tmpStep->getPosition().y);
+#endif
+                    auto insertPos = tmpStep->getPosition();
+                    if(auto paStep = tmpStep->getParent()){
+                        auto vec = tmpStep->getPosition() - paStep->getPosition();
+                        if(vec.x == 0){
+                            //move to top or bottom, so check left & right
+                            //left
+                            if(canMoveAtCoord(Vec2(tmpStep->getPosition().x - 1, tmpStep->getPosition().y))){
+                                insertPos.x -= 0.5;
+                            }
+                            //right
+                            if(canMoveAtCoord(Vec2(tmpStep->getPosition().x + 1, tmpStep->getPosition().y))){
+                                insertPos.x += 0.5;
+                            }
+                        }
+                        
+                        if(vec.y == 0){
+                            //move to left or right, so check top & bottom
+                            //top
+                            if(canMoveAtCoord(Vec2(tmpStep->getPosition().x, tmpStep->getPosition().y + 1))){
+                                insertPos.y += 0.5;
+                            }
+                            //right
+                            if(canMoveAtCoord(Vec2(tmpStep->getPosition().x, tmpStep->getPosition().y - 1))){
+                                insertPos.y -= 0.5;
+                            }
+                        }
+                    }
+                    result.push_back(insertPos);
+                    tmpStep = tmpStep->getParent(); // Go backward
+                } while (tmpStep != NULL); // Until there is not more parent
+#if DEBUG_PRINT
+                CCLOG("*** PATH END");
+#endif
+                std::reverse(result.begin(), result.end());
+                for (int i = 0; i < _openStep.size(); i ++) {
+                    delete _openStep.at(i);
+                }
+                for (int i = 0; i < _closedStep.size(); i ++) {
+                    delete _closedStep.at(i);
+                }
+                _openStep.clear();
+                _closedStep.clear();
+                break;
+            }
+            
+            // Get the adjacent tiles coord of the current step
+            auto adjSteps = getNearbyTileCoord(currentStep->getPosition());
+            for (Vec2 v : adjSteps) {
+                ShortestPathStep *step = new ShortestPathStep(v);
+                
+                // Check if the step isn't already in the closed set
+                if (contains(_closedStep, step)){
+                    delete step;
                     step = NULL;
                     continue; // Ignore it
                 }
@@ -216,7 +390,6 @@ namespace pathfinding{
                         // Because the G Score has changed, the F score may have changed too
                         // So to keep the open list ordered we have to remove the step, and re-insert it with
                         // the insert function which is preserving the list ordered by F score
-                        
                         _openStep.erase(openIte);
                         
                         // Re-insert it with the function which is preserving the list ordered by F score

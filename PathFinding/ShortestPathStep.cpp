@@ -36,22 +36,26 @@ namespace pathfinding {
         
     }
     
-    ShortestPathStep::~ShortestPathStep()
-    {
-        CC_SAFE_RELEASE_NULL(_parent);
+    ShortestPathStep::ShortestPathStep(const Vec2& pos) : ShortestPathStep(){
+        _position = pos;
     }
     
-    ShortestPathStep* ShortestPathStep::create(const cocos2d::Vec2 &pos)
+    ShortestPathStep::~ShortestPathStep()
     {
-        auto ret = new ShortestPathStep();
-        if(ret && ret->init(pos)){
-            ret->autorelease();
-            return ret;
-        }else{
-            CC_SAFE_DELETE(ret);
-            return nullptr;
-        }
+        _parent = NULL;
     }
+    
+//    ShortestPathStep* ShortestPathStep::create(const cocos2d::Vec2 &pos)
+//    {
+//        auto ret = new ShortestPathStep();
+//        if(ret && ret->init(pos)){
+//            ret->autorelease();
+//            return ret;
+//        }else{
+//            CC_SAFE_DELETE(ret);
+//            return nullptr;
+//        }
+//    }
     
     bool ShortestPathStep::init(const cocos2d::Vec2 &pos)
     {

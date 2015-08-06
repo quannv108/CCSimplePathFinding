@@ -29,18 +29,17 @@
 
 namespace pathfinding{
     
-    class ShortestPathStep : public cocos2d::Ref {
+    class ShortestPathStep {
         
     public:
+        ShortestPathStep(const cocos2d::Vec2& pos);
         ShortestPathStep();
         virtual ~ShortestPathStep();
-        
-        static ShortestPathStep* create(const cocos2d::Vec2& pos);
         
         CC_SYNTHESIZE_PASS_BY_REF(cocos2d::Vec2, _position, Position);
         CC_SYNTHESIZE(int, _gScore, GScore);
         CC_SYNTHESIZE(int, _hScore, HScore);
-        CC_SYNTHESIZE_RETAIN(ShortestPathStep *, _parent, Parent);
+        CC_SYNTHESIZE(ShortestPathStep *, _parent, Parent);
         
         inline int getFScore(){
             return _gScore + _hScore;
